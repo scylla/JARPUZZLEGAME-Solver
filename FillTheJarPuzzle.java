@@ -6,8 +6,8 @@ public class FillTheJarPuzzle {
 	int[] jars;
 	HashMap<Node, ArrayList<Node>> graph;
 	HashMap<Node, Boolean> nodeState;
+	HashMap<Node, ArrayList<Boolean>> boolMap;
 	int jarCount;
-	PrintWriter pw;
 	MyScanner mySc;
 
 	public static class MyScanner {
@@ -40,7 +40,6 @@ public class FillTheJarPuzzle {
 
 	public FillTheJarPuzzle() {
 		
-		pw = new PrintWriter(new BufferedOutputStream(System.out));
 		mySc = new MyScanner();
 
 		this.jarCount = mySc.nextInt();
@@ -62,9 +61,6 @@ public class FillTheJarPuzzle {
 		nodeState.put(start, false);
 
 		genGraph();
-
-		//printGraph();
-
 		genBFSGraph(start);
 		performDFS(start, mySc.nextInt());
 	}
@@ -74,7 +70,8 @@ public class FillTheJarPuzzle {
 
 		HashMap<Node, ArrayList<Node>> bfsGraph = new HashMap<Node, ArrayList<Node>>();
 		HashMap<Node, Boolean> bfsState = new HashMap<Node, Boolean>();
-
+		boolMap = new HashMap<Node, ArrayList<Boolean>>();
+		
 		for(Node key: nodeState.keySet()){
 			bfsState.put(key, false);
 		}
@@ -86,14 +83,17 @@ public class FillTheJarPuzzle {
 			Node n = queue.remove();
 			ArrayList<Node> nl = new ArrayList<Node>();
 			ArrayList<Node> ol = graph.get(n);
+			ArrayList<Boolean> bl = new ArrayList<Boolean>();
 			bfsState.put(n, true);
 			for(Node key: ol) {
 				if(!bfsState.get(key)){
 					nl.add(key);
 					queue.add(key);
+					bl.add(false);
 				}
 			} 
 			bfsGraph.put(n, nl);
+			boolMap.put(n, bl);
 		}
 
 		graph = bfsGraph;
@@ -108,23 +108,25 @@ public class FillTheJarPuzzle {
 		start.pass = true;
 		boolean add = false;
 		int count = 1;
+		
 		while(!stk.empty()) {
 
-			if(solutionNode(stk.peek(), sol)) {
+			Node top = stk.peek();
+
+			if(solutionNode(top, sol)) {
 				System.out.println("sol " + count++);
 				System.out.println(stk.toString());
-				stk.pop();
+				Node pop = stk.pop();
 				System.out.println();
-				//System.out.println("popped " + stk.pop());
 			}
 
-			ArrayList<Node> adj = graph.get(stk.peek());
+			ArrayList<Node> adj = graph.get(top);
 			
 			for(int i=0;i<adj.size();i++) {
-				if(!adj.get(i).pass){
+
+				if(!boolMap.get(top).get(i)){
 					stk.push(adj.get(i));
-					adj.get(i).pass = true;
-					//System.out.println("pushed " + adj.get(i));
+					boolMap.get(top).set(i, true);
 					add = true;
 					break;
 				}
@@ -132,7 +134,6 @@ public class FillTheJarPuzzle {
 
 			if(!add) {
 				stk.pop();
-				//System.out.println("popped " + stk.pop());
 			}
 			
 			add = false;
@@ -229,10 +230,13 @@ public class FillTheJarPuzzle {
 	private class Node {
 
 		int[] jars;
+		boolean[] states;
 		boolean pass;
 
 		Node() {
 			jars = new int[jarCount];
+			states = new boolean[jarCount];
+			Arrays.fill(states, false);
 			pass = false;
 		}
 
